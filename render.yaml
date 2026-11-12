@@ -1,0 +1,24 @@
+# Render Blueprint for PlayPen. In Render: New > Blueprint, pick this repository.
+# Render sets RENDER_EXTERNAL_URL, which PlayPen uses as its public origin for PayPal return links.
+# The free plan's disk is temporary: farms reset when the service restarts. That's fine for a demo.
+services:
+  - type: web
+    name: playpen
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn "playpen:create_app()" --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 90
+    healthCheckPath: /
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.9
+      - key: PLAYPEN_SESSION_KEY
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: CHANNEL3_API_KEY
+        sync: false
+      - key: PAYPAL_SANDBOX_CLIENT_ID
+        sync: false
+      - key: PAYPAL_SANDBOX_CLIENT_SECRET
+        sync: false

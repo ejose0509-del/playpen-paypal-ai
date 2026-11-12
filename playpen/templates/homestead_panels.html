@@ -1,0 +1,101 @@
+{% macro close_panel(label) %}
+<form method="dialog"><button class="icon-button" aria-label="Close {{ label }}">{{ icon("close") }}</button></form>
+{% endmacro %}
+
+<dialog class="game-panel parchment" id="visitor-panel" aria-labelledby="visitor-name">
+  <header class="panel-header">
+    <div class="character-heading">
+      {{ crop_sprite(farm.visitor_order.visitor, "portrait") }}
+      <div>
+        <h2 id="visitor-name">{{ visitors[farm.visitor_order.visitor].name }}</h2>
+        <span class="panel-meta" id="visitor-role">{{ visitors[farm.visitor_order.visitor].role }}</span>
+      </div>
+    </div>
+    {{ close_panel("visitor") }}
+  </header>
+  <p class="character-line" id="visitor-line">{{ farm.visitor_order.line }}</p>
+  <p class="panel-feedback" data-feedback role="status" hidden></p>
+  <div class="order-ticket">
+    <h3 id="visitor-order-title">{{ farm.visitor_order.title }}</h3>
+    <ul class="order-goods" id="visitor-goods">
+      {% for item, quantity in farm.visitor_order.goods.items() %}
+        <li>{{ goods[item] }} <strong>{{ farm.inventory[item] }} / {{ quantity }}</strong></li>
+      {% endfor %}
+    </ul>
+    <p class="panel-meta" id="visitor-reward">+{{ farm.visitor_order.coins }} coins · +{{ farm.visitor_order.xp }} XP</p>
+    <form method="post" action="{{ url_for('fulfill_visitor') }}" data-farm-action>
+      <input type="hidden" name="sequence" value="{{ farm.visitor_order.sequence }}" id="visitor-sequence">
+      <button type="submit" class="panel-action" id="visitor-deliver">Deliver goods</button>
+    </form>
+  </div>
+</dialog>
+
+{% for kind, animal in farm.animals.items() %}
+  <dialog class="game-panel parchment" id="animal-{{ kind }}" aria-labelledby="animal-title-{{ kind }}">
+    <header class="panel-header">
+      <div class="character-heading">
+        {{ crop_sprite(kind, "portrait") }}
+        <div><h2 id="animal-title-{{ kind }}">{{ animal.name }}</h2><span class="panel-meta">{{ animal.kind }}</span></div>
+      </div>
+      {{ close_panel(animal.name) }}
+    </header>
+    <p id="animal-description-{{ kind }}">Feed {{ animal.name }} to start production.</p>
+    <p class="panel-feedback" data-feedback role="status" hidden></p>
+    <form method="post" action="{{ url_for('animal_action', kind=kind) }}" data-farm-action>
+      <input type="hidden" name="action" value="feed">
+      <button class="panel-action" type="submit" id="animal-action-{{ kind }}">Feed {{ animal.name }}</button>
+    </form>
+  </dialog>
+{% endfor %}
+
+<dialog class="game-panel parchment" id="repair-yard" aria-labelledby="repair-title">
+  <header class="panel-header">
+    <h2 id="repair-title">{{ icon("repair", 27) }} Farm repairs</h2>
+    {{ close_panel("repairs") }}
+  </header>
+  <p class="panel-lead">Deliver goods to village visitors to earn coins for rebuilding.</p>
+  <p class="coin-line">{{ icon("coin", 19) }} <strong id="repair-coins">{{ farm.inventory.coins }}</strong> coins</p>
+  <p class="panel-feedback" data-feedback role="status" hidden></p>
+  <ul class="repair-list">
+    {% for key, repair in repairs.items() %}
+      <li data-repair="{{ key }}">
+        {{ crop_sprite("lumber" if key == "barn" else "orchard") }}
+        <div>
+          <h3>{{ repair.name }}</h3>
+          <p data-repair-detail>{{ repair.complete if key in farm.repairs else repair.detail }}</p>
+          <p class="panel-meta" data-repair-status>Level {{ repair.level }} · {{ repair.coins }} coins · +{{ repair.xp }} XP</p>
+          <form method="post" action="{{ url_for('restore_building', key=key) }}" data-farm-action>
+            <button type="submit" class="panel-action" data-repair-button>{{ "Restored" if key in farm.repairs else "Restore" }}</button>
+          </form>
+        </div>
+      </li>
+    {% endfor %}
+  </ul>
+</dialog>
+
+<dialog class="game-panel parchment" id="level-road" aria-labelledby="levels-title">
+  <header class="panel-header">
+    <h2 id="levels-title">{{ icon("leaf", 27) }} Farm levels</h2>
+    {{ close_panel("farm levels") }}
+  </header>
+  <p class="panel-lead">Earn XP by harvesting, caring for animals, filling orders, and restoring the farm.</p>
+  <ol class="level-list">
+    {% for level in levels %}
+      <li data-farm-level="{{ level.number }}">
+        <span class="level-number">{{ level.number }}</span>
+        <div><strong>{{ level.name }}</strong><p>{{ level.unlock }}</p></div>
+        <span class="level-xp">{{ level.xp }} XP</span>
+      </li>
+    {% endfor %}
+  </ol>
+  <h3 class="impact-title">Demo donations</h3>
+  <p class="panel-lead">The demo records a fictional sponsor donation when you reach each milestone. The amounts are simulated.</p>
+  <ul class="impact-list">
+    {% for impact in impact_milestones %}
+      <li data-impact-level="{{ impact.level }}">
+        <div><strong>{{ impact.cause }}</strong><p>Level {{ impact.level }} · {{ impact.sponsor }}</p></div>
+        <div class="impact-total"><strong>${{ "%.2f" | format(impact.cents / 100) }}</strong><span data-impact-status>Upcoming</span></div>
+      </li>
+    {% endfor %}
+  </ul>
+</dialog>

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Farm ledger · PlayPen{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{{ url_for('static', filename='farm.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='ledger.css') }}">
+  <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@32.3.3/dist/ag-grid-community.min.js" defer></script>
+  <script src="{{ url_for('static', filename='ledger.js') }}" defer></script>
+{% endblock %}
+{% block content %}
+<div class="ledger-page" id="ledger" data-url="{{ url_for('ledger_data') }}">
+  <header class="ledger-header">
+    <div>
+      <h1>Farm ledger</h1>
+      <p>Every reward, test payment and demo donation your farm has recorded. The server keeps this ledger, so nothing is counted twice.</p>
+    </div>
+    <a class="panel-action ledger-back" href="{{ url_for('home') }}">Back to the farm</a>
+  </header>
+
+  <dl class="ledger-tiles" aria-live="polite">
+    <div class="parchment"><dt>Farm XP</dt><dd id="tile-xp">–</dd><small id="tile-rewards">&nbsp;</small></div>
+    <div class="parchment"><dt>Demo donations</dt><dd id="tile-donated">–</dd><small>Fictional sponsors, no money moved</small></div>
+    <div class="parchment"><dt>Sandbox payments</dt><dd id="tile-sandbox">–</dd><small>PayPal test money</small></div>
+  </dl>
+
+  <section class="ledger-table parchment" aria-labelledby="ledger-title">
+    <div class="ledger-tools">
+      <h2 id="ledger-title" class="sr-only">Ledger entries</h2>
+      <div class="ledger-chips" role="group" aria-label="Show">
+        <button type="button" data-group="all" aria-pressed="true">All</button>
+        <button type="button" data-group="xp" aria-pressed="false">XP</button>
+        <button type="button" data-group="money" aria-pressed="false">Payments</button>
+        <button type="button" data-group="donation" aria-pressed="false">Donations</button>
+      </div>
+      <label class="ledger-search"><span class="sr-only">Search the ledger</span>
+        <input type="search" id="ledger-search" placeholder="Search…" autocomplete="off"></label>
+    </div>
+    <div id="ledger-grid" class="ag-theme-quartz ledger-grid"></div>
+    <p class="ledger-note" id="ledger-note" hidden></p>
+  </section>
+</div>
+{% endblock %}

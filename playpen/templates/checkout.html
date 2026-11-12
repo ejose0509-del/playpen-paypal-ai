@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Sandbox checkout · PlayPen{% endblock %}
+{% block content %}
+<h1>Sandbox checkout</h1>
+<p>{{ catalog[checkout["sku"]].name }} · {{ checkout["currency"] }} {{ checkout["amount"] }}</p>
+{% if checkout["capture_id"] %}
+  <p>Payment confirmed. This purchase earned {{ checkout["xp"] }} XP.</p>
+{% else %}
+  <p>Approve the payment in PayPal Sandbox, then confirm it here to earn XP.</p>
+  <p><a href="{{ checkout['approval_url'] }}">Open PayPal Sandbox approval</a></p>
+  <form method="post" action="{{ url_for('capture_checkout', order_id=checkout['paypal_order_id']) }}">
+    <input type="hidden" name="csrf" value="{{ session.csrf }}">
+    <button type="submit">Confirm sandbox purchase</button>
+  </form>
+{% endif %}
+<p><a href="{{ url_for('home') }}">Return to the farm</a></p>
+{% endblock %}

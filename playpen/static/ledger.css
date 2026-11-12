@@ -1,0 +1,60 @@
+/* Farm ledger page. The grid uses AG Grid's Quartz theme, recoloured to match the farm's parchment. */
+body { background: #546634 url("./art/valley.jpg") center / cover fixed; }
+.ledger-page { max-width: 1080px; margin: 0 auto; padding: 18px 16px 32px; display: grid; gap: 14px; }
+
+.ledger-header {
+  display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px 20px;
+  padding: 14px 18px; border-radius: 14px; background: #fff3d8ee; box-shadow: var(--shade);
+}
+.ledger-header h1 { margin: 0; font: 32px/1.1 var(--display); color: var(--green); }
+.ledger-header p { margin: 4px 0 0; max-width: 60ch; color: var(--muted); }
+.ledger-back { display: inline-flex; align-items: center; text-decoration: none; color: var(--ink); }
+
+.ledger-tiles { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0; }
+.ledger-tiles div { padding: 12px 14px; }
+.ledger-tiles dt { color: var(--muted); font-size: 13px; letter-spacing: .05em; text-transform: uppercase; }
+.ledger-tiles dd { margin: 4px 0 2px; font: 34px/1 var(--display); color: var(--green); }
+.ledger-tiles small { color: var(--muted); font-size: 13px; }
+
+.ledger-table { padding: 12px; display: grid; gap: 10px; }
+.ledger-tools { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.ledger-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.ledger-chips button {
+  min-height: 36px; padding: 4px 12px; border: 1px solid #a87539; border-radius: 999px; background: #fffaf0; font-weight: 700; font-size: 14px;
+}
+.ledger-chips button[aria-pressed="true"] { background: var(--green); border-color: var(--green); color: #fff8e6; }
+.ledger-search input {
+  min-height: 38px; width: min(240px, 100%); padding: 6px 10px; font: inherit; font-size: 16px;
+  border: 1px solid #a87539; border-radius: 9px; background: #fffaf0; color: var(--ink);
+}
+
+.ledger-grid { height: min(62svh, 560px); }
+.ag-theme-quartz {
+  --ag-font-family: system-ui, sans-serif;
+  --ag-font-size: 14px;
+  --ag-foreground-color: #412419;
+  --ag-background-color: #fffaf0;
+  --ag-header-background-color: #f3dfb6;
+  --ag-header-foreground-color: #412419;
+  --ag-odd-row-background-color: #fff3dd;
+  --ag-row-hover-color: #ffe7a8;
+  --ag-border-color: #e1c99b;
+  --ag-wrapper-border-radius: 10px;
+  --ag-active-color: #486126;
+  --ag-input-focus-border-color: #486126;
+}
+.ag-theme-quartz .ag-header-cell-text { font-weight: 700; }
+.ag-theme-quartz .row-donation { --ag-background-color: #fff1c4; }
+.kind-dot { display: inline-block; width: 1.2em; text-align: center; }
+.ledger-overlay { padding: 10px 14px; border-radius: 9px; background: #fff3d8; color: var(--muted); }
+.ledger-note { margin: 0; color: #73371e; }
+
+@media (max-width: 690px) {
+  .ledger-page { padding: 10px 10px 24px; gap: 10px; }
+  .ledger-header h1 { font-size: 26px; }
+  .ledger-tiles { grid-template-columns: 1fr 1fr; gap: 8px; }
+  .ledger-tiles div:first-child { grid-column: 1 / -1; }
+  .ledger-tiles dd { font-size: 28px; }
+  .ledger-search, .ledger-search input { width: 100%; }
+  .ledger-grid { height: 58svh; }
+}

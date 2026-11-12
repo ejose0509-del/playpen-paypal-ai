@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+{% block head %}
+  <script src="{{ url_for('static', filename='bramble-rig.js') }}"></script>
+  <meta name="playpen-extension-token" content="{{ extension_token }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='farm.css') }}">
+  <script type="module" src="{{ url_for('static', filename='farm.js') }}"></script>
+{% endblock %}
+{% block content %}
+{% macro icon(name, size=24) %}
+<svg class="icon" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  {% if name == "barn" %}<path d="M2 11 12 3l10 8M4 10v11h16V10M8 21v-8h8v8M8 13l8 8m0-8-8 8"/><path d="M11 8h2"/>
+  {% elif name == "shop" %}<path d="M3 10l2-5h14l2 5M3 10v2c0 2 3 3 4.5 1 1 1.5 3.5 1.5 4.5 0 1 1.5 3.5 1.5 4.5 0 1.5 2 4.5 1 4.5-1v-2H3ZM5 14v7h14v-7M10 21v-5h4v5"/>
+  {% elif name == "harvest" %}<path d="m4 11 2 9h12l2-9M3 11h18M7 11l5-7 5 7m-7 3 1 3m3-3-1 3"/>
+  {% elif name == "leaf" %}<path d="M12 21v-9m0 3C5 15 3 10 3 5c5 0 9 3 9 8m0-2c0-5 4-7 9-7 0 5-4 8-9 8"/>
+  {% elif name == "egg" %}<path d="M12 3c4 0 8 7 8 12a8 8 0 0 1-16 0c0-5 4-12 8-12Z"/>
+  {% elif name == "milk" %}<path d="M9 3h6m-6 0v5l-3 4v8a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1v-8l-3-4V3M6 13h12"/>
+  {% elif name == "coin" %}<circle cx="12" cy="12" r="9"/><path d="M12 7v10m3-8h-4a1.5 1.5 0 0 0 0 3h2a1.5 1.5 0 0 1 0 3H9"/>
+  {% elif name == "repair" %}<path d="m14 6 4-3 3 3-3 4-2-2-8 9-2 1-2-2 1-2 9-8Zm-2 5 8 8"/>
+  {% elif name == "close" %}<path d="m6 6 12 12M18 6 6 18"/>
+  {% else %}<path d="M12 5v14M5 12h14"/>
+  {% endif %}
+</svg>
+{% endmacro %}
+{% macro crop_sprite(crop, class_name="") %}
+  <img class="{{ class_name }}" src="{{ url_for('static', filename='art/' ~ crop ~ '.png') }}" alt="" draggable="false">
+{% endmacro %}
+
+<div class="farm-game" id="farm-game" data-csrf="{{ session.csrf }}" data-companion-url="{{ url_for('companion_chat') }}">
+  <svg class="sprite-filters" width="0" height="0" aria-hidden="true">
+    <defs>
+      <filter id="sprite-cutout" color-interpolation-filters="sRGB">
+        <feComponentTransfer><feFuncA type="gamma" amplitude="1" exponent="5" offset="0"/></feComponentTransfer>
+      </filter>
+    </defs>
+  </svg>
+  <div class="viewport" id="farm-viewport">
+    <div class="world" id="farm-world" data-barn="{{ 'restored' if 'barn' in farm.repairs else 'old' }}">
+      <img class="landscape" id="farm-landscape" src="{{ url_for('static', filename='art/valley.jpg') }}"
+        alt="" draggable="false" fetchpriority="high" width="1536" height="1024">
+      <img class="landscape landscape-restored" src="{{ url_for('static', filename='art/valley-restored.jpg') }}"
+        alt="" draggable="false" loading="lazy" width="1536" height="1024">
+
+      {% include "world.html" %}
+
+      <div class="field" aria-label="Crop beds">
+        {% for plot in farm.plots %}
+          <button class="plot" data-action-url="{{ url_for('update_plot', number=plot.number) }}" type="button" aria-label="Bed {{ plot.number }}, {{ plot.crop or 'empty' }}">
+            <span class="plot-crop" aria-hidden="true" hidden></span>
+            <span class="plot-plus" aria-hidden="true">{{ icon("plus", 18) }}</span>
+            <span class="plot-label" aria-hidden="true" hidden></span>
+            <span class="plot-burst" aria-hidden="true"></span>
+          </button>
+        {% endfor %}
+      </div>
+
+      <button class="habitat" id="wildflower-habitat" type="button" data-dialog="habitat-story"
+        aria-label="Explore the restored Wildflower habitat"{% if not farm.milestones %} hidden{% endif %}>
+        <span class="habitat-art" aria-hidden="true"></span>
+        <span class="bees" aria-hidden="true"><svg><use href="#c-bee"/></svg><svg><use href="#c-bee"/></svg><svg><use href="#c-bee"/></svg></span>
+        <strong>Wildflower habitat</strong>
+      </button>
+
+      <span class="guide-arrow" id="guide-arrow" aria-hidden="true" hidden></span>
+    </div>
+  </div>
+
+  <div class="seed-picker" id="seed-picker" role="group" aria-label="Choose a seed" hidden>
+    {% for id, label in (("wheat", "Wheat"), ("carrot", "Carrot")) %}
+      <button type="button" class="seed" data-seed="{{ id }}">{{ crop_sprite(id) }}<strong>{{ label }}</strong></button>
+    {% endfor %}
+  </div>
+  <div class="fly-layer" id="fly-layer" aria-hidden="true"></div>
+
+  <header class="farm-hud">
+    <div class="nameplate parchment">
+      <h1>PlayPen</h1>
+      <button type="button" class="level-button" data-dialog="level-road" aria-label="Open farm levels and demo donations">
+        <strong id="farm-level">Level {{ farm.level }}</strong><span aria-hidden="true"> · </span><span id="farm-xp">{{ farm.xp }} XP</span>
+      </button>
+      <progress id="farm-progress" value="{{ farm.xp - farm.level_start if farm.next_level_xp else 1 }}"
+        max="{{ farm.next_level_xp - farm.level_start if farm.next_level_xp else 1 }}" aria-label="Progress to next farm level"></progress>
+    </div>
+    <nav class="game-menu" aria-label="Farm menu">
+      <span class="parchment coin-chip" aria-label="Coins">{{ icon("coin", 18) }} <strong id="hud-coins">{{ farm.inventory.coins }}</strong></span>
+      <button type="button" class="parchment menu-button" id="barn-button" data-dialog="barn" aria-label="Barn">{{ icon("barn") }}<span>Barn</span></button>
+      <button type="button" class="parchment menu-button" data-dialog="shop" aria-label="Shop">{{ icon("shop") }}<span>Shop</span></button>
+    </nav>
+  </header>
+
+  <div class="farm-footer">
+    <button type="button" class="quest parchment" id="quest" aria-labelledby="quest-name" aria-describedby="quest-instruction">
+      <span class="quest-text">
+        <strong id="quest-name">First harvest</strong>
+        <span id="quest-instruction">Tap an empty bed to plant.</span>
+      </span>
+      <span class="quest-track"><span id="quest-fill"></span><strong id="quest-count">0 / 1</strong></span>
+    </button>
+    <div class="companion" id="companion">
+      <section class="chat parchment" id="chat" aria-labelledby="chat-title" hidden>
+        <header class="chat-header">
+          <h2 id="chat-title">Bramble</h2>
+          <span class="chat-note">AI companion</span>
+          <button type="button" class="icon-button" id="chat-close" aria-label="Close chat">{{ icon("close", 18) }}</button>
+        </header>
+        <ol class="chat-log" id="chat-log" aria-live="polite"></ol>
+        <form class="chat-form" id="chat-form" autocomplete="off">
+          <label class="sr-only" for="chat-input">Message Bramble</label>
+          <input id="chat-input" name="message" maxlength="400" placeholder="Ask Bramble anything…" enterkeyhint="send">
+          <button type="submit" class="panel-action">Send</button>
+        </form>
+      </section>
+      <p class="pet-bubble" id="pet-bubble" hidden></p>
+      <button type="button" class="pet" id="pet" aria-label="Talk to Bramble, your farm companion" aria-expanded="false" aria-controls="chat">
+        <span class="pet-art" id="pet-art" data-fallback="{{ url_for('static', filename='art/bramble.png') }}" aria-hidden="true"></span>
+        <span class="pet-badge" id="pet-badge" aria-hidden="true">!</span>
+      </button>
+    </div>
+    <div class="zoom-buttons" role="group" aria-label="Zoom">
+      <button type="button" class="parchment" data-zoom="1.3" aria-label="Zoom in">+</button>
+      <button type="button" class="parchment" data-zoom="0.77" aria-label="Zoom out">−</button>
+    </div>
+  </div>
+  <p class="game-feedback" id="game-feedback" role="status" aria-live="polite"></p>
+
+  <dialog class="game-panel parchment" id="barn" aria-labelledby="barn-title">
+    <header class="panel-header">
+      <h2 id="barn-title">{{ icon("barn", 28) }} Your barn</h2>
+      <form method="dialog"><button class="icon-button" aria-label="Close barn">{{ icon("close") }}</button></form>
+    </header>
+    <p><strong id="farm-stage">{{ farm.stage }}</strong></p>
+    <div class="inventory" aria-label="Barn inventory">
+      {% for item, label in goods.items() %}
+        <div>{% if item in ('wheat', 'carrot') %}{{ crop_sprite(item) }}{% else %}{{ icon(item, 27) }}{% endif %}
+          <strong>{{ label }}</strong> <span id="stock-{{ item }}">{{ farm.inventory[item] }}</span></div>
+      {% endfor %}
+    </div>
+    <p class="coin-line">{{ icon("coin", 19) }} <strong id="stock-coins">{{ farm.inventory.coins }}</strong> coins
+      <button type="button" class="text-button" data-dialog="repair-yard">View repairs</button></p>
+    <a class="panel-action market-link" href="{{ url_for('ledger_page') }}">Open the farm ledger →</a>
+    <p id="milestone-note">{% if farm.milestones %}Wildflower habitat impact milestone unlocked.{% else %}Wildflower habitat unlocks at {{ milestone_xp }} XP.{% endif %}</p>
+    <details>
+      <summary>Farm journal</summary>
+      {% if farm.daily_complete %}
+        <p>Today’s bonus is complete.</p>
+      {% else %}
+        <form method="post" action="{{ url_for('daily') }}" class="daily-form">
+          <input type="hidden" name="csrf" value="{{ session.csrf }}">
+          <input type="hidden" name="day" value="{{ day }}">
+          <fieldset>
+            <legend>{{ prompt }}</legend>
+            {% for choice in choices %}
+              <label><input type="radio" name="answer" value="{{ loop.index0 }}" required> {{ choice }}</label>
+            {% endfor %}
+          </fieldset>
+          <button type="submit" class="panel-action">Claim daily bonus</button>
+        </form>
+      {% endif %}
+    </details>
+  </dialog>
+
+  <dialog class="game-panel parchment" id="shop" aria-labelledby="shop-title">
+    <header class="panel-header">
+      <h2 id="shop-title">{{ icon("shop", 28) }} Partner market</h2>
+      <form method="dialog"><button class="icon-button" aria-label="Close shop">{{ icon("close") }}</button></form>
+    </header>
+    <p class="panel-lead">Real organic products from 365 by Whole Foods Market, shown as a <strong>partner brand (demo)</strong>. The brand hasn’t partnered with PlayPen. Try a purchase to see how a partner offer earns farm XP.</p>
+    <a class="panel-action market-link" href="{{ url_for('market') }}">Go shopping with Bramble →</a>
+    <p class="panel-feedback" data-feedback role="status" hidden></p>
+    <ul class="partner-list">
+      {% for sku, product in partner_products.items() %}
+        <li>
+          <img src="{{ product.image or url_for('static', filename='art/' ~ product.art) }}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='{{ url_for('static', filename='art/' ~ product.art) }}'" alt="{{ product.name }}" class="product-photo" width="66" height="66" loading="lazy">
+          <div>
+            <h3>{{ product.name }}</h3>
+            <p class="panel-meta">{{ product.brand }} · Partner brand (demo) · <a href="https://www.amazon.com/dp/{{ product.asin }}" target="_blank" rel="noopener noreferrer">View on {{ product.store }}</a></p>
+            <p>{{ product.detail }}</p>
+            <form method="post" action="{{ url_for('partner_demo', sku=sku) }}" data-farm-action>
+              <span class="offer-value">${{ product.price }} on {{ product.store }} · +{{ product.xp }} XP</span>
+              <button class="panel-action" data-demo-sku="{{ sku }}" type="submit"{% if sku in farm.demo_purchases %} disabled{% endif %}>{{ "Demo recorded" if sku in farm.demo_purchases else "Simulate purchase" }}</button>
+            </form>
+          </div>
+        </li>
+      {% endfor %}
+    </ul>
+    <details class="sandbox-details">
+    <summary>PayPal Sandbox checkout</summary>
+    <p>Test purchases use a <a href="https://developer.paypal.com/dashboard/accounts" target="_blank" rel="noopener noreferrer">Personal Sandbox account</a>.</p>
+    {% if not configured %}<p>Sandbox checkout is unavailable until credentials are configured.</p>{% endif %}
+    <ul class="shop-list">
+      {% for sku, product in catalog.items() %}
+        <li>
+          <form method="post" action="{{ url_for('create_checkout') }}">
+            <input type="hidden" name="csrf" value="{{ session.csrf }}">
+            <input type="hidden" name="sku" value="{{ sku }}">
+            <div><strong>{{ product.name }}</strong><span>{{ product.xp }} XP · USD {{ product.price }}</span></div>
+            <button type="submit" class="panel-action"{% if not configured %} disabled{% endif %}>Pay with PayPal</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+    {% if farm.orders %}
+      <details>
+        <summary>Open Sandbox orders</summary>
+        <ul>
+          {% for order in farm.orders %}
+            <li><a href="{{ url_for('checkout_status', order_id=order['paypal_order_id']) }}">{{ catalog[order['sku']].name }} · {{ order['paypal_order_id'] }}</a></li>
+          {% endfor %}
+        </ul>
+      </details>
+    {% endif %}
+    </details>
+  </dialog>
+  {% include "homestead_panels.html" %}
+  <dialog class="game-panel parchment" id="habitat-story" aria-labelledby="habitat-title">
+    <header class="panel-header">
+      <h2 id="habitat-title">{{ icon("leaf", 28) }} Wildflower habitat</h2>
+      <form method="dialog"><button class="icon-button" aria-label="Close habitat story">{{ icon("close") }}</button></form>
+    </header>
+    <div class="habitat-art habitat-story-art" aria-hidden="true"></div>
+    <p>The old meadow is in bloom again. Follow the path to the hive and listen for the bees.</p>
+    <p>Native flowers give local pollinators nectar and pollen. Growing several kinds helps feed them at different times of the year.</p>
+  </dialog>
+  <dialog class="game-panel parchment donation-card" id="donation-card" aria-labelledby="donation-title">
+    <p class="donation-kicker" id="donation-level">Level 3 milestone</p>
+    <h2 id="donation-title">A gift for the valley</h2>
+    <p class="donation-amount" id="donation-amount">$5.00</p>
+    <p class="donation-line"><strong id="donation-sponsor">Sponsor</strong> is giving to <strong id="donation-cause">a cause</strong> because your farm grew.</p>
+    <p class="donation-total" id="donation-total"></p>
+    <p class="donation-note">Demo donation. The sponsor and amount are fictional and no money moved.</p>
+    <form method="dialog" class="donation-actions">
+      <button type="button" class="text-button" data-dialog="level-road">See all milestones</button>
+      <button class="panel-action">Wonderful!</button>
+    </form>
+  </dialog>
+  <script type="application/json" id="farm-state">{{ field | tojson }}</script>
+  <script type="application/json" id="homestead-content">{{ {"visitors": visitors, "goods": goods, "repairs": repairs, "impact": impact_milestones} | tojson }}</script>
+  <noscript><p class="notice parchment">Enable JavaScript to play your farm.</p></noscript>
+</div>
+{% endblock %}

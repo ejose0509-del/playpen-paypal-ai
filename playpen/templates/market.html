@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% block title %}Willow Lane Market · PlayPen demo{% endblock %}
+{% block head %}
+  <script src="{{ url_for('static', filename='bramble-rig.js') }}"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='farm.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='market.css') }}">
+  <script type="module" src="{{ url_for('static', filename='market.js') }}"></script>
+{% endblock %}
+{% block content %}
+{% set regular_items = [
+  {"name": "Stone-ground Bread Flour", "brand": "Hollow Creek Mill", "price": "6.80", "art": "wheat.png"},
+  {"name": "Heirloom Carrot Seeds", "brand": "Greenrow", "price": "3.25", "art": "carrot.png"},
+  {"name": "Galvanized Watering Can", "brand": "Porch & Pail", "price": "18.00", "art": "water.png"},
+  {"name": "Cedar Raised Bed Kit", "brand": "Timberline Home", "price": "64.00", "art": "lumber.png"},
+  {"name": "Herb Starter Pots", "brand": "Greenrow", "price": "9.50", "art": "seedling.png"},
+] %}
+<div class="market" id="market" data-csrf="{{ session.csrf }}" data-companion-url="{{ url_for('companion_chat') }}">
+  <p class="demo-strip">
+    <span><strong>PlayPen demo.</strong> Willow Lane Market is a fictional store. The 365 by Whole Foods Market products are real, shown as a partner brand (demo); the brand hasn’t partnered with PlayPen.</span>
+    <a href="{{ url_for('home') }}">Back to the farm</a>
+  </p>
+
+  <header class="shop-header">
+    <span class="shop-logo">Willow Lane <em>Market</em></span>
+    <nav class="shop-nav" aria-label="Departments (demo)">
+      <span>Garden</span><span>Pantry</span><span>Home</span><span>Local makers</span>
+    </nav>
+  </header>
+
+  <section class="shop-hero">
+    <h1>Fresh for the season</h1>
+    <p>Seeds, pantry staples and garden tools from small makers.</p>
+  </section>
+
+  <ul class="shop-grid" id="shop-grid">
+    {% for sku, product in partner_products.items() %}
+      {% set earned = sku in demo_purchases %}
+      <li class="shop-card" data-partner="{{ sku }}" data-name="{{ product.name }}">
+        <span class="partner-tag" aria-hidden="true">Partner brand (demo) · {{ "XP earned" if earned else "+" ~ product.xp ~ " XP" }}</span>
+        <img src="{{ product.image or url_for('static', filename='art/' ~ product.art) }}" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='{{ url_for('static', filename='art/' ~ product.art) }}'" alt="{{ product.name }}" class="product-photo" width="160" height="160" loading="lazy">
+        <h2>{{ product.name }}</h2>
+        <p class="shop-brand">{{ product.brand }}</p>
+        <p class="shop-price">${{ product.price }}</p>
+        <p class="partner-detail">{{ product.detail }} <a href="https://www.amazon.com/dp/{{ product.asin }}" target="_blank" rel="noopener noreferrer">See it on Amazon</a></p>
+        <div class="partner-actions">
+          <button type="button" class="ask-bramble" data-ask="{{ product.name }}">Ask Bramble</button>
+          <form method="post" action="{{ url_for('create_checkout') }}">
+            <input type="hidden" name="csrf" value="{{ session.csrf }}">
+            <input type="hidden" name="sku" value="{{ sku }}">
+            <button type="submit" class="shop-buy"{% if not configured %} disabled title="PayPal Sandbox isn't set up"{% endif %}>Buy with PayPal Sandbox</button>
+          </form>
+        </div>
+      </li>
+      {% if loop.index <= regular_items | length %}
+        {% set item = regular_items[loop.index0] %}
+        <li class="shop-card">
+          <img src="{{ url_for('static', filename='art/' ~ item.art) }}" alt="" width="160" height="160" loading="lazy">
+          <h2>{{ item.name }}</h2>
+          <p class="shop-brand">{{ item.brand }}</p>
+          <p class="shop-price">${{ item.price }}</p>
+        </li>
+      {% endif %}
+    {% endfor %}
+    {% for item in regular_items[partner_products | length:] %}
+      <li class="shop-card">
+        <img src="{{ url_for('static', filename='art/' ~ item.art) }}" alt="" width="160" height="160" loading="lazy">
+        <h2>{{ item.name }}</h2>
+        <p class="shop-brand">{{ item.brand }}</p>
+        <p class="shop-price">${{ item.price }}</p>
+      </li>
+    {% endfor %}
+  </ul>
+
+  <div class="market-companion companion" id="companion">
+    <section class="chat parchment" id="chat" aria-labelledby="chat-title" hidden>
+      <header class="chat-header">
+        <h2 id="chat-title">Bramble</h2>
+        <span class="chat-note">AI companion</span>
+        <button type="button" class="icon-button" id="chat-close" aria-label="Close chat">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <ol class="chat-log" id="chat-log" aria-live="polite"></ol>
+      <form class="chat-form" id="chat-form" autocomplete="off">
+        <label class="sr-only" for="chat-input">Message Bramble</label>
+        <input id="chat-input" name="message" maxlength="400" placeholder="Ask about a product…" enterkeyhint="send">
+        <button type="submit" class="panel-action">Send</button>
+      </form>
+    </section>
+    <p class="pet-bubble" id="pet-bubble" hidden></p>
+    <button type="button" class="pet" id="pet" aria-label="Talk to Bramble, your farm companion" aria-expanded="false" aria-controls="chat">
+      <span class="pet-art" id="pet-art" data-fallback="{{ url_for('static', filename='art/bramble.png') }}" aria-hidden="true"></span>
+      <span class="pet-badge" id="pet-badge" aria-hidden="true" hidden>!</span>
+    </button>
+  </div>
+</div>
+{% endblock %}
