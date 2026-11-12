@@ -2,6 +2,25 @@
 
 A farm restoration game with a Python and SQLite backend. Grow crops, raise animals, fulfill village orders, and use the proceeds to rebuild the homestead. A browser session identifies your farm, and its crops, inventory, and progress are stored on disk in `instance/playpen.sqlite3`.
 
+## For judges
+
+**Live demo: https://playpen-yw8o.onrender.com** (no setup or keys needed)
+
+- It runs on Render's free plan: the first visit after a quiet spell can take about a minute to wake up, and farms reset when the service restarts.
+- **PayPal:** everything uses the PayPal Sandbox (test money). To approve a test purchase, sign in on the PayPal Sandbox page with any Sandbox *personal* test account (from your [PayPal Developer Dashboard](https://developer.paypal.com/dashboard/accounts)), or the test buyer listed in our Devpost testing instructions.
+- **AI:** Bramble the hedgehog is powered by Claude (Anthropic API) with tool use.
+
+A quick tour (about 5 minutes):
+
+1. **Farm:** tap an empty bed, drag a seed across the field, swipe to water, and swipe to harvest after 12 seconds. Deliver 2 wheat to Nora.
+2. **Bramble:** tap the hedgehog in the corner and ask "what should I do next?" The reply uses your farm's live state from the server.
+3. **Agentic checkout:** open **Shop → Go shopping with Bramble**, then ask Bramble to "buy the organic honey for me". Claude calls a `start_sandbox_checkout` tool, the server creates a PayPal Sandbox order, and you approve it on PayPal. Bramble can't approve or pay. Back in the game, confirm the purchase. The server verifies the capture and grants the XP once.
+4. **Donations:** at Level 3 (40 XP), a simulated sponsor donation waits at the old well. Tap the well for the ceremony.
+5. **Ledger:** **Barn → Open the farm ledger** shows every reward, Sandbox payment and demo donation in AG Grid.
+6. **Bramble in Chrome (optional):** load the `extension/` folder as an unpacked extension (`chrome://extensions` → Developer mode → Load unpacked), open the live demo once to link it, then ask Bramble on any tab to "show me organic granola on Amazon".
+
+Sponsor tools used: **Render** (hosting, `render.yaml` Blueprint), **AG Grid** (farm ledger), **Channel3** (Bramble's product search in Chrome).
+
 ## Run locally
 
 Requires Python 3.9 or newer.
