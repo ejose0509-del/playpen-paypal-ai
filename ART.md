@@ -74,3 +74,7 @@ Generated with ChatGPT image generation on November 10, 2026, as one transparent
 ```text
 Generate an image with a fully transparent background (PNG with alpha). Transparent game sprite atlas for an original cozy farm restoration game. Landscape 2:1 canvas split into EXACTLY 2 equal columns, one character per cell, each centered with wide transparent margins and nothing crossing the middle. The character is Bramble, a small round friendly hedgehog companion with soft chestnut-brown spines, a cream face and belly, big warm dark eyes, rosy cheeks, and a tiny moss-green satchel with a single leaf badge worn across its body. Left cell: Bramble sitting happily, facing three-quarter right, small paws together. Right cell: Bramble standing up excitedly on hind legs, one paw raised and pointing up and to the right, mouth open as if talking. Dimensional hand-painted gouache storybook miniature game art, warm light from the upper left, matching a painterly farm map. No ground, no shadow plate, no grid lines, no border, no text, no lettering, no background scenery. Clean transparent alpha around both sprites.
 ```
+
+## Bramble pose sheet (`playpen/static/art/bramble/sheet.png`)
+
+Generated with ChatGPT image generation from the original `bramble.png`, as one transparent 4x2 sprite sheet: idle, blink, talking, happy jump, walking (two steps), thinking and sleeping. The game and the Chrome extension show one cell at a time.

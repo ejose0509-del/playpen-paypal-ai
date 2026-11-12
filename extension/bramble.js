@@ -122,7 +122,7 @@
   document.documentElement.append(host);
 
   const pet = root.querySelector(".pet");
-  const rig = window.BrambleRig.create({ title: "Bramble" });
+  const rig = window.BrambleRig.create({ title: "Bramble", base: chrome.runtime.getURL("poses/") });
   pet.querySelector(".rig").append(rig.el);
   const bubble = root.querySelector(".bubble");
   const panel = root.querySelector(".panel");

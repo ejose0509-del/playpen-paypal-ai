@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Bramble for PlayPen",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Bramble the hedgehog follows you around Chrome, finds organic food and demo partner brands on Amazon, and earns your PlayPen farm a little XP.",
   "icons": {
     "16": "icons/icon16.png",
@@ -54,7 +54,8 @@
       "resources": [
         "bramble.png",
         "bramble-talk.png",
-        "BreeSerif-Regular.ttf"
+        "BreeSerif-Regular.ttf",
+        "poses/sheet.png"
       ],
       "matches": [
         "<all_urls>"
